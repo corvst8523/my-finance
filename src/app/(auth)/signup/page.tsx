@@ -1,0 +1,89 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
+
+export default function SignupPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+
+    if (password.length < 8) {
+      setError("A senha precisa ter no minimo 8 caracteres.");
+      return;
+    }
+
+    setPending(true);
+    const supabase = createClient();
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+    setPending(false);
+
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
+
+    if (!data.session) {
+      router.replace("/login");
+      return;
+    }
+
+    router.replace("/app/cashflow");
+    router.refresh();
+  }
+
+  return (
+    <main className="grid min-h-dvh place-items-center bg-muted/40 px-4">
+      <section className="w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm">
+        <div className="mb-6">
+          <p className="text-sm font-medium text-muted-foreground">My Finance</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Cadastrar</h1>
+        </div>
+
+        <form className="space-y-4" onSubmit={onSubmit}>
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome</Label>
+            <Input id="name" name="name" autoComplete="name" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" name="email" type="email" autoComplete="email" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Senha</Label>
+            <Input id="password" name="password" type="password" minLength={8} autoComplete="new-password" required />
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button type="submit" className="w-full hover:scale-[1.01]" disabled={pending}>
+            {pending ? "Cadastrando..." : "Cadastrar"}
+          </Button>
+        </form>
+
+        <p className="mt-5 text-center text-sm text-muted-foreground">
+          Ja tem conta?{" "}
+          <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Entrar
+          </Link>
+        </p>
+      </section>
+    </main>
+  );
+}

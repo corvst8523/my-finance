@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Finance
 
-## Getting Started
+App web de financas pessoais feito com Next.js App Router, TypeScript, TailwindCSS, shadcn/ui, Framer Motion e Supabase Auth/Postgres.
 
-First, run the development server:
+## Rodar localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variaveis de ambiente
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Crie ou mantenha `.env.local` com:
 
-## Learn More
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
 
-To learn more about Next.js, take a look at the following resources:
+O app usa Supabase Auth para login/cadastro. A senha nunca e armazenada pelo app; o hash fica a cargo do Supabase Auth.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dados de exemplo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Depois de criar um usuario pelo `/signup`, copie o `id` desse usuario no Supabase Auth e use o arquivo `seed.sql`.
 
-## Deploy on Vercel
+No `seed.sql`, substitua `00000000-0000-0000-0000-000000000000` pelo `id` real do usuario e execute no SQL Editor do Supabase. O script cria 3 categorias e 6 contas iniciais.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Rotas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/login`: login
+- `/signup`: cadastro
+- `/app/cashflow`: fluxo de caixa principal
+- `/app/setup`: CRUD de categorias e contas
+
+> O projeto esta em `next@16.2.4`; nesta versao a antiga convencao de Middleware foi renomeada para `proxy.ts`, usada aqui para proteger `/app/*`.
