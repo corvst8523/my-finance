@@ -1,6 +1,6 @@
 import { addMonths, differenceInCalendarMonths, format, isSameMonth, parseISO, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
-import type { Account, CashflowRow, Category, Entry, MonthInfo } from "@/lib/types";
+import type { Item, CashflowRow, Category, Entry, MonthInfo } from "@/lib/types";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -74,17 +74,42 @@ export function isIncome(type: string) {
   return ["entrada", "income", "receita"].includes(type.toLowerCase());
 }
 
-export function buildRows(categories: Category[], accounts: Account[]): CashflowRow[] {
+export function buildRows(categories: Category[], items: Item[]): CashflowRow[] {
   const sortedCategories = [...categories].sort(compareCode);
-  const accountsByCategory = new Map<string, Account[]>();
+  const topLevelItems = items.filter((Item) => !Item.category_id).sort(compareCode);
+  const itemsByCategory = new Map<string, Item[]>();
 
-  for (const account of accounts) {
-    accountsByCategory.set(account.category_id, [...(accountsByCategory.get(account.category_id) ?? []), account]);
+  for (const Item of items.filter((item) => item.category_id)) {
+    const categoryId = Item.category_id;
+    if (!categoryId) {
+      continue;
+    }
+    itemsByCategory.set(categoryId, [...(itemsByCategory.get(categoryId) ?? []), Item]);
   }
 
   const rows: CashflowRow[] = [];
+  const topLevelRows = [
+    ...sortedCategories.map((category) => ({ kind: "category" as const, item: category })),
+    ...topLevelItems.map((Item) => ({ kind: "item" as const, item: Item })),
+  ].sort((a, b) => compareCode(a.item, b.item));
 
-  for (const category of sortedCategories) {
+  for (const topLevelRow of topLevelRows) {
+    if (topLevelRow.kind === "item") {
+      const Item = topLevelRow.item;
+      rows.push({
+        kind: "item",
+        id: Item.id,
+        categoryId: null,
+        parentId: Item.parent_id,
+        code: Item.code,
+        name: Item.name,
+        type: Item.type ?? "saida",
+        depth: 0,
+      });
+      continue;
+    }
+
+    const category = topLevelRow.item;
     rows.push({
       kind: "category",
       id: category.id,
@@ -94,14 +119,14 @@ export function buildRows(categories: Category[], accounts: Account[]): Cashflow
       depth: 0,
     });
 
-    for (const account of [...(accountsByCategory.get(category.id) ?? [])].sort(compareCode)) {
+    for (const Item of [...(itemsByCategory.get(category.id) ?? [])].sort(compareCode)) {
       rows.push({
-        kind: "account",
-        id: account.id,
+        kind: "item",
+        id: Item.id,
         categoryId: category.id,
-        parentId: null,
-        code: account.code,
-        name: account.name,
+        parentId: Item.parent_id,
+        code: Item.code,
+        name: Item.name,
         type: category.type,
         depth: 1,
       });
@@ -111,16 +136,16 @@ export function buildRows(categories: Category[], accounts: Account[]): Cashflow
   return rows;
 }
 
-export function entryKey(accountId: string, month: string) {
-  return `${accountId}:${month}`;
+export function entryKey(itemId: string, month: string) {
+  return `${itemId}:${month}`;
 }
 
 export function makeEntryMap(entries: Entry[]) {
-  return new Map(entries.map((entry) => [entryKey(entry.account_id, entry.month), entry]));
+  return new Map(entries.map((entry) => [entryKey(entry.item_id, entry.month), entry]));
 }
 
-export function getOwnValue(entries: Entry[], accountId: string, month: string) {
-  return makeEntryMap(entries).get(entryKey(accountId, month))?.value ?? 0;
+export function getOwnValue(entries: Entry[], itemId: string, month: string) {
+  return makeEntryMap(entries).get(entryKey(itemId, month))?.value ?? 0;
 }
 
 export function calculateRowValue(row: CashflowRow, rows: CashflowRow[], entries: Entry[], month: string) {
@@ -128,8 +153,8 @@ export function calculateRowValue(row: CashflowRow, rows: CashflowRow[], entries
 
   if (row.kind === "category") {
     return rows
-      .filter((candidate) => candidate.kind === "account" && candidate.categoryId === row.id)
-      .reduce((sum, account) => sum + (map.get(entryKey(account.id, month))?.value ?? 0), 0);
+      .filter((candidate) => candidate.kind === "item" && candidate.categoryId === row.id)
+      .reduce((sum, Item) => sum + (map.get(entryKey(Item.id, month))?.value ?? 0), 0);
   }
 
   const own = map.get(entryKey(row.id, month))?.value ?? 0;
@@ -140,7 +165,7 @@ export function calculateMonthTotal(rows: CashflowRow[], entries: Entry[], month
   const map = makeEntryMap(entries);
 
   return rows
-    .filter((row) => row.kind === "account")
+    .filter((row) => row.kind === "item")
     .reduce((sum, row) => {
       const value = map.get(entryKey(row.id, month))?.value ?? 0;
       return sum + (isIncome(row.type) ? value : -value);
@@ -148,10 +173,10 @@ export function calculateMonthTotal(rows: CashflowRow[], entries: Entry[], month
 }
 
 export function calculateOpeningBalance(rows: CashflowRow[], entries: Entry[], month: string) {
-  const accountTypeById = new Map<string, "income" | "expense">();
+  const itemTypeById = new Map<string, "income" | "expense">();
   for (const row of rows) {
-    if (row.kind === "account") {
-      accountTypeById.set(row.id, isIncome(row.type) ? "income" : "expense");
+    if (row.kind === "item") {
+      itemTypeById.set(row.id, isIncome(row.type) ? "income" : "expense");
     }
   }
 
@@ -159,7 +184,7 @@ export function calculateOpeningBalance(rows: CashflowRow[], entries: Entry[], m
     if (entry.month >= month) {
       return sum;
     }
-    const kind = accountTypeById.get(entry.account_id);
+    const kind = itemTypeById.get(entry.item_id);
     if (!kind) {
       return sum;
     }

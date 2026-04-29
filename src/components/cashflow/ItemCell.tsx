@@ -3,20 +3,20 @@
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { upsertEntryValue } from "@/app/app/actions";
 import { formatCurrency, isIncome } from "@/lib/cashflow";
-import type { CategoryType, Entry } from "@/lib/types";
+import type { CategoryType, EntryChange } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type AccountCellProps = {
-  accountId: string;
+type ItemCellProps = {
+  itemId: string;
   month: string;
   type: CategoryType;
   value: number;
   ownValue: number;
-  onSaved: (entry: Entry, message: string) => void;
+  onSaved: (change: EntryChange, message: string) => void;
   onError: (message: string) => void;
 };
 
-export function AccountCell({ accountId, month, type, value, ownValue, onSaved, onError }: AccountCellProps) {
+export function ItemCell({ itemId, month, type, value, ownValue, onSaved, onError }: ItemCellProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(ownValue));
   const [pending, setPending] = useState(false);
@@ -31,12 +31,12 @@ export function AccountCell({ accountId, month, type, value, ownValue, onSaved, 
   }, [editing]);
 
   async function save() {
-    const parsed = Number(draft.replace(",", "."));
+    const parsed = draft.trim() === "" ? 0 : Number(draft.replace(",", "."));
 
     if (!Number.isFinite(parsed)) {
       setDraft(String(ownValue));
       setEditing(false);
-      onError("Informe um valor numerico.");
+        onError("Informe um valor numerico.");
       return;
     }
 
@@ -46,7 +46,7 @@ export function AccountCell({ accountId, month, type, value, ownValue, onSaved, 
     }
 
     setPending(true);
-    const result = await upsertEntryValue(accountId, month, parsed);
+    const result = await upsertEntryValue(itemId, month, parsed);
     setPending(false);
     setEditing(false);
 
@@ -56,7 +56,7 @@ export function AccountCell({ accountId, month, type, value, ownValue, onSaved, 
       return;
     }
 
-    onSaved(result.data, result.message ?? "Valor salvo.");
+    onSaved(result.data, result.message ?? "Lancamento salvo.");
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {

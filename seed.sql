@@ -24,23 +24,23 @@ begin
   select id into v_moradia from categories where user_id = v_user and code = '2';
   select id into v_despesas from categories where user_id = v_user and code = '3';
 
-  insert into accounts (user_id, category_id, code, name)
+  insert into items (user_id, category_id, code, name, type)
   values
-    (v_user, v_entradas, '1.1', 'Salario'),
-    (v_user, v_entradas, '1.2', 'Freelas'),
-    (v_user, v_moradia, '2.1', 'Aluguel'),
-    (v_user, v_moradia, '2.2', 'Condominio'),
-    (v_user, v_despesas, '3.1', 'Supermercado'),
-    (v_user, v_despesas, '3.2', 'Transporte');
+    (v_user, v_entradas, '1.1', 'Salario', 'entrada'),
+    (v_user, v_entradas, '1.2', 'Freelas', 'entrada'),
+    (v_user, v_moradia, '2.1', 'Aluguel', 'saida'),
+    (v_user, v_moradia, '2.2', 'Condominio', 'saida'),
+    (v_user, v_despesas, '3.1', 'Supermercado', 'saida'),
+    (v_user, v_despesas, '3.2', 'Transporte', 'saida');
 
-  select id into v_salario from accounts where user_id = v_user and code = '1.1';
-  select id into v_freelas from accounts where user_id = v_user and code = '1.2';
-  select id into v_aluguel from accounts where user_id = v_user and code = '2.1';
-  select id into v_condominio from accounts where user_id = v_user and code = '2.2';
-  select id into v_supermercado from accounts where user_id = v_user and code = '3.1';
-  select id into v_transporte from accounts where user_id = v_user and code = '3.2';
+  select id into v_salario from items where user_id = v_user and code = '1.1';
+  select id into v_freelas from items where user_id = v_user and code = '1.2';
+  select id into v_aluguel from items where user_id = v_user and code = '2.1';
+  select id into v_condominio from items where user_id = v_user and code = '2.2';
+  select id into v_supermercado from items where user_id = v_user and code = '3.1';
+  select id into v_transporte from items where user_id = v_user and code = '3.2';
 
-  insert into entries (user_id, account_id, month, value, note)
+  insert into entries (user_id, item_id, month, value, note)
   values
     (v_user, v_salario, date_trunc('month', now())::date, 8500, 'Receita principal'),
     (v_user, v_freelas, date_trunc('month', now())::date, 1200, 'Projetos avulsos'),

@@ -6,12 +6,16 @@ export const categorySchema = z.object({
   type: z.enum(["entrada", "saida"]),
 });
 
-export const accountSchema = z.object({
+export const itemSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(2, "Informe pelo menos 2 caracteres."),
-  category_id: z.string().uuid("Escolha uma categoria."),
+  category_id: z
+    .union([z.string().uuid("Escolha uma categoria valida."), z.literal("")])
+    .optional()
+    .transform((value) => value || null),
+  type: z.enum(["entrada", "saida"]),
   parent_id: z.string().uuid().nullable().optional(),
 });
 
 export type CategoryFormValues = z.infer<typeof categorySchema>;
-export type AccountFormValues = z.infer<typeof accountSchema>;
+export type ItemFormValues = z.input<typeof itemSchema>;

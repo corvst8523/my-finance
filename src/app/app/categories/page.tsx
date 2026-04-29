@@ -15,8 +15,8 @@ export default async function CategoriesPage() {
 
   const [categoriesResult, accountsResult, entriesResult] = await Promise.all([
     supabase.from("categories").select("id,user_id,code,name,type").eq("user_id", user.id).order("type").order("code"),
-    supabase.from("accounts").select("id,category_id").eq("user_id", user.id),
-    supabase.from("entries").select("account_id").eq("user_id", user.id),
+    supabase.from("items").select("id,category_id").eq("user_id", user.id),
+    supabase.from("entries").select("item_id,value").eq("user_id", user.id).neq("value", 0),
   ]);
 
   if (categoriesResult.error || accountsResult.error || entriesResult.error) {
@@ -28,26 +28,27 @@ export default async function CategoriesPage() {
     );
   }
 
-  const accounts = accountsResult.data ?? [];
+  const items = accountsResult.data ?? [];
   const entries = entriesResult.data ?? [];
-  const accountsByCategory = new Map<string, number>();
-  const accountsToCategory = new Map<string, string>();
+  const itemsByCategory = new Map<string, number>();
+  const itemsToCategory = new Map<string, string>();
 
-  for (const account of accounts) {
-    accountsByCategory.set(account.category_id, (accountsByCategory.get(account.category_id) ?? 0) + 1);
-    accountsToCategory.set(account.id, account.category_id);
+  for (const Item of items) {
+    if (!Item.category_id) continue;
+    itemsByCategory.set(Item.category_id, (itemsByCategory.get(Item.category_id) ?? 0) + 1);
+    itemsToCategory.set(Item.id, Item.category_id);
   }
 
   const entriesByCategory = new Map<string, number>();
   for (const entry of entries) {
-    const categoryId = accountsToCategory.get(entry.account_id);
+    const categoryId = itemsToCategory.get(entry.item_id);
     if (!categoryId) continue;
     entriesByCategory.set(categoryId, (entriesByCategory.get(categoryId) ?? 0) + 1);
   }
 
   const usage = (categoriesResult.data ?? []).map((category) => ({
     category: category as Category,
-    accountCount: accountsByCategory.get(category.id) ?? 0,
+    itemCount: itemsByCategory.get(category.id) ?? 0,
     entryCount: entriesByCategory.get(category.id) ?? 0,
   }));
 

@@ -2,44 +2,47 @@
 
 import { zodResolverIssue } from "@/components/setup/zodResolverIssue";
 import {
-  createAccountAction,
   createCategoryAction,
-  deleteAccountAction,
   deleteCategoryAction,
-  updateAccountAction,
+  createItemAction,
+  deleteItemAction,
+  updateItemAction,
   updateCategoryAction,
 } from "@/app/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buildRows } from "@/lib/cashflow";
-import type { Account, Category } from "@/lib/types";
-import { type AccountFormValues, accountSchema, type CategoryFormValues, categorySchema } from "@/lib/validation";
+import type { Item, Category } from "@/lib/types";
+import { type ItemFormValues, itemSchema, type CategoryFormValues, categorySchema } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { Edit3, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 type SetupManagerProps = {
   categories: Category[];
-  accounts: Account[];
+  items: Item[];
 };
 
-export function SetupManager({ categories, accounts }: SetupManagerProps) {
+export function SetupManager({ categories, items }: SetupManagerProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
-  const rows = useMemo(() => buildRows(categories, accounts), [categories, accounts]);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const rows = useMemo(() => buildRows(categories, items), [categories, items]);
 
   const categoryForm = useForm<CategoryFormValues>({
     defaultValues: { name: "", type: "entrada" },
   });
-  const accountForm = useForm<AccountFormValues>({
-    defaultValues: { name: "", category_id: "" },
+  const itemForm = useForm<ItemFormValues>({
+    defaultValues: { name: "", category_id: "", type: "saida" },
   });
+  const selectedItemType = useWatch({ control: itemForm.control, name: "type" }) ?? "saida";
+  const itemTypeField = itemForm.register("type");
+  const itemCategories = categories.filter((category) => category.type === selectedItemType);
 
   function showResult(result: { ok: boolean; message?: string; error?: string }) {
     if (result.ok) {
@@ -73,12 +76,12 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
     }
   }
 
-  async function submitAccount(values: AccountFormValues) {
+  async function submitItem(values: ItemFormValues) {
     const payload = {
       ...values,
       parent_id: null,
     };
-    const parsed = accountSchema.safeParse(editingAccount ? { ...payload, id: editingAccount.id } : payload);
+    const parsed = itemSchema.safeParse(editingItem ? { ...payload, id: editingItem.id } : payload);
     const issue = zodResolverIssue(parsed);
 
     if (issue) {
@@ -86,14 +89,14 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
       return;
     }
 
-    const result = editingAccount
-      ? await updateAccountAction({ ...payload, id: editingAccount.id })
-      : await createAccountAction(payload);
+    const result = editingItem
+      ? await updateItemAction({ ...payload, id: editingItem.id })
+      : await createItemAction(payload);
 
     showResult(result);
     if (result.ok) {
-      accountForm.reset({ name: "", category_id: "" });
-      setEditingAccount(null);
+      itemForm.reset({ name: "", category_id: "", type: "saida" });
+      setEditingItem(null);
     }
   }
 
@@ -102,11 +105,13 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
     categoryForm.reset({ name: category.name, type: category.type });
   }
 
-  function editAccount(account: Account) {
-    setEditingAccount(account);
-    accountForm.reset({
-      name: account.name,
-      category_id: account.category_id,
+  function editItem(item: Item) {
+    const category = categories.find((categoryItem) => categoryItem.id === item.category_id);
+    setEditingItem(item);
+    itemForm.reset({
+      name: item.name,
+      category_id: item.category_id ?? "",
+      type: item.type ?? category?.type ?? "saida",
     });
   }
 
@@ -114,8 +119,8 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
     showResult(await deleteCategoryAction(id));
   }
 
-  async function removeAccount(id: string) {
-    showResult(await deleteAccountAction(id));
+  async function removeItem(id: string) {
+    showResult(await deleteItemAction(id));
   }
 
   return (
@@ -162,19 +167,33 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
             </form>
           </FormPanel>
 
-          <FormPanel title={editingAccount ? "Editar lançamento" : "Novo lançamento"}>
-            <form className="space-y-4" onSubmit={accountForm.handleSubmit(submitAccount)}>
-              <Field label="Nome" id="account-name">
-                <Input id="account-name" {...accountForm.register("name")} placeholder="Salario" />
+          <FormPanel title={editingItem ? "Editar item" : "Novo item"}>
+            <form className="space-y-4" onSubmit={itemForm.handleSubmit(submitItem)}>
+              <Field label="Nome" id="item-name">
+                <Input id="item-name" {...itemForm.register("name")} placeholder="Salario" />
               </Field>
-              <Field label="Categoria" id="account-category">
+              <Field label="Tipo" id="item-type">
                 <select
-                  id="account-category"
+                  id="item-type"
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
-                  {...accountForm.register("category_id")}
+                  {...itemTypeField}
+                  onChange={(event) => {
+                    itemTypeField.onChange(event);
+                    itemForm.setValue("category_id", "");
+                  }}
                 >
-                  <option value="">Selecione</option>
-                  {categories.map((category) => (
+                  <option value="entrada">Entrada</option>
+                  <option value="saida">Saida</option>
+                </select>
+              </Field>
+              <Field label="Categoria" id="item-category">
+                <select
+                  id="item-category"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                  {...itemForm.register("category_id")}
+                >
+                  <option value="">Sem categoria</option>
+                  {itemCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name} ({category.type === "entrada" ? "Entrada" : "Saída"})
                     </option>
@@ -187,15 +206,15 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
               <div className="flex gap-2">
                 <Button type="submit" className="hover:scale-[1.01]">
                   <Plus className="size-4" />
-                  {editingAccount ? "Salvar" : "Criar"}
+                  {editingItem ? "Salvar" : "Criar"}
                 </Button>
-                {editingAccount ? (
+                {editingItem ? (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setEditingAccount(null);
-                      accountForm.reset({ name: "", category_id: "" });
+                      setEditingItem(null);
+                      itemForm.reset({ name: "", category_id: "", type: "saida" });
                     }}
                   >
                     <X className="size-4" />
@@ -212,7 +231,7 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
 
         <section className="rounded-lg border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
-            <h2 className="text-lg font-semibold">Categorias e lançamentos</h2>
+            <h2 className="text-lg font-semibold">Categorias e itens</h2>
           </div>
           <div className="divide-y divide-border">
             {rows.length === 0 ? (
@@ -231,7 +250,7 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
                       <span className="text-muted-foreground">{row.code}</span> {row.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {row.kind === "category" ? (row.type === "entrada" ? "Entrada" : "Saida") : "Lançamento"}
+                      {row.kind === "category" ? (row.type === "entrada" ? "Entrada" : "Saida") : "Item"}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
@@ -245,8 +264,8 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
                           const category = categories.find((item) => item.id === row.id);
                           if (category) editCategory(category);
                         } else {
-                          const account = accounts.find((item) => item.id === row.id);
-                          if (account) editAccount(account);
+                          const Item = items.find((item) => item.id === row.id);
+                          if (Item) editItem(Item);
                         }
                       }}
                     >
@@ -258,7 +277,7 @@ export function SetupManager({ categories, accounts }: SetupManagerProps) {
                       size="icon-sm"
                       className="text-destructive hover:text-destructive"
                       aria-label="Deletar"
-                      onClick={() => (row.kind === "category" ? removeCategory(row.id) : removeAccount(row.id))}
+                      onClick={() => (row.kind === "category" ? removeCategory(row.id) : removeItem(row.id))}
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -290,3 +309,4 @@ function Field({ label, id, children }: { label: string; id: string; children: R
     </div>
   );
 }
+

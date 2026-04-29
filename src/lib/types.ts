@@ -8,22 +8,29 @@ export type Category = {
   type: CategoryType;
 };
 
-export type Account = {
+export type Item = {
   id: string;
   user_id: string;
-  category_id: string;
+  category_id: string | null;
   parent_id: string | null;
   code: string;
   name: string;
+  type?: CategoryType;
 };
 
 export type Entry = {
   id: string;
   user_id: string;
-  account_id: string;
+  item_id: string;
   month: string;
   value: number;
   note: string | null;
+};
+
+export type EntryChange = {
+  entry: Entry | null;
+  itemId: string;
+  month: string;
 };
 
 export type MonthInfo = {
@@ -42,14 +49,14 @@ export type CashflowRow =
       depth: 0;
     }
   | {
-      kind: "account";
+      kind: "item";
       id: string;
-      categoryId: string;
+      categoryId: string | null;
       parentId: string | null;
       code: string;
       name: string;
       type: CategoryType;
-      depth: 1 | 2;
+      depth: 0 | 1 | 2;
     };
 
 export type MutationResult<T = undefined> =

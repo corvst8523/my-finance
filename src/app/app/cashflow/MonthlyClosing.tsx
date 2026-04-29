@@ -38,16 +38,16 @@ export function MonthlyClosing({ month, rows, entries, onClose, onEntryChange, o
   const selectedMonth = month;
 
   const totalIncome = rows
-    .filter((row) => row.kind === "account" && isIncome(row.type))
+    .filter((row) => row.kind === "item" && isIncome(row.type))
     .reduce((sum, row) => sum + (map.get(entryKey(row.id, month.key))?.value ?? 0), 0);
   const totalExpense = rows
-    .filter((row) => row.kind === "account" && !isIncome(row.type))
+    .filter((row) => row.kind === "item" && !isIncome(row.type))
     .reduce((sum, row) => sum + (map.get(entryKey(row.id, month.key))?.value ?? 0), 0);
   const balance = calculateMonthTotal(rows, entries, month.key);
 
-  async function saveNote(accountId: string, note: string) {
-    setSavingNote(accountId);
-    const result = await updateEntryNote(accountId, selectedMonth.key, note);
+  async function saveNote(itemId: string, note: string) {
+    setSavingNote(itemId);
+    const result = await updateEntryNote(itemId, selectedMonth.key, note);
     setSavingNote("");
 
     if (!result.ok) {
@@ -144,7 +144,7 @@ function ClosingSection({
   entries: Entry[];
   month: string;
   savingNote: string;
-  onSaveNote: (accountId: string, note: string) => Promise<void>;
+  onSaveNote: (itemId: string, note: string) => Promise<void>;
 }) {
   const map = useMemo(() => makeEntryMap(entries), [entries]);
 
@@ -156,7 +156,7 @@ function ClosingSection({
       <div className="divide-y divide-border">
         {rows.map((row) => {
           const value = calculateRowValue(row, allRows, entries, month);
-          const note = row.kind === "account" ? map.get(entryKey(row.id, month))?.note ?? "" : "";
+          const note = row.kind === "item" ? map.get(entryKey(row.id, month))?.note ?? "" : "";
 
           return (
             <motion.div
@@ -173,7 +173,7 @@ function ClosingSection({
                 <p className="text-sm">
                   <span className="text-muted-foreground">{row.code}</span> {row.name}
                 </p>
-                {row.kind === "account" ? (
+                {row.kind === "item" ? (
                   <Textarea
                     className="mt-2 min-h-12 text-xs"
                     defaultValue={note}

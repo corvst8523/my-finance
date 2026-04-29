@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CalendarRange, ChevronDown, ChevronRight, ListPlus, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
-  createAccountAction,
   createCategoryAction,
+  createItemAction,
 } from "@/app/app/actions";
-import { AccountCell } from "@/components/cashflow/AccountCell";
+import { ItemCell } from "@/components/cashflow/ItemCell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,14 +26,14 @@ import {
   monthInputFromKey,
   monthShortTitle,
 } from "@/lib/cashflow";
-import type { Account, Category, CashflowRow, Entry, MonthInfo } from "@/lib/types";
-import { type AccountFormValues, accountSchema, type CategoryFormValues, categorySchema } from "@/lib/validation";
+import type { Category, CashflowRow, Entry, EntryChange, Item, MonthInfo } from "@/lib/types";
+import { type ItemFormValues, itemSchema, type CategoryFormValues, categorySchema } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { zodResolverIssue } from "@/components/setup/zodResolverIssue";
 
 type CashflowTableProps = {
   categories: Category[];
-  accounts: Account[];
+  items: Item[];
   entries: Entry[];
   months: MonthInfo[];
   rangeMonths: MonthInfo[];
@@ -47,11 +47,11 @@ type ToastState = {
   message: string;
 };
 
-type DrawerMode = "category" | "account" | "months" | null;
+type DrawerMode = "category" | "item" | "months" | null;
 
 export function CashflowTable({
   categories: initialCategories,
-  accounts: initialAccounts,
+  items: initialItems,
   entries: initialEntries,
   months,
   rangeMonths,
@@ -61,12 +61,12 @@ export function CashflowTable({
 }: CashflowTableProps) {
   const router = useRouter();
   const [categories, setCategories] = useState(initialCategories);
-  const [accounts, setAccounts] = useState(initialAccounts);
+  const [items, setItems] = useState(initialItems);
   const [entries, setEntries] = useState(initialEntries);
   const [groupOpen, setGroupOpen] = useState({ entrada: true, saida: true });
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const rows = useMemo(() => buildRows(categories, accounts), [categories, accounts]);
+  const rows = useMemo(() => buildRows(categories, items), [categories, items]);
   const entryMap = useMemo(() => makeEntryMap(entries), [entries]);
   const incomeRows = useMemo(() => rows.filter((row) => isIncome(row.type)), [rows]);
   const expenseRows = useMemo(() => rows.filter((row) => !isIncome(row.type)), [rows]);
@@ -76,12 +76,12 @@ export function CashflowTable({
     window.setTimeout(() => setToast(null), 2400);
   }
 
-  function upsertLocalEntry(entry: Entry, message: string) {
+  function upsertLocalEntry(change: EntryChange, message: string) {
     setEntries((current) => {
       const next = current.filter(
-        (item) => item.id !== entry.id && entryKey(item.account_id, item.month) !== entryKey(entry.account_id, entry.month),
+        (entry) => entryKey(entry.item_id, entry.month) !== entryKey(change.itemId, change.month),
       );
-      return [...next, entry];
+      return change.entry ? [...next, change.entry] : next;
     });
     pushToast(message, "success");
   }
@@ -112,9 +112,9 @@ export function CashflowTable({
             <Plus className="size-4" />
             Nova categoria
           </Button>
-          <Button type="button" variant="secondary" size="sm" onClick={() => openDrawer("account")}>
+          <Button type="button" variant="secondary" size="sm" onClick={() => openDrawer("item")}>
             <ListPlus className="size-4" />
-            Novo lançamento
+            Novo item
           </Button>
         </div>
 
@@ -243,8 +243,8 @@ export function CashflowTable({
           pushToast(message, "success");
           setDrawerMode(null);
         }}
-        onAccountCreated={(account, message) => {
-          setAccounts((current) => [...current, account]);
+        onItemCreated={(item, message) => {
+          setItems((current) => [...current, item]);
           router.refresh();
           pushToast(message, "success");
           setDrawerMode(null);
@@ -384,7 +384,7 @@ function DataRow({
   entries: Entry[];
   entryMap: Map<string, Entry>;
   months: MonthInfo[];
-  onSaved: (entry: Entry, message: string) => void;
+  onSaved: (change: EntryChange, message: string) => void;
   onError: (message: string) => void;
 }) {
   return (
@@ -392,7 +392,7 @@ function DataRow({
       <RowLabel row={row} />
       {months.map((month) => {
         const value = calculateRowValue(row, rows, entries, month.key);
-        const ownValue = row.kind === "account" ? entryMap.get(entryKey(row.id, month.key))?.value ?? 0 : 0;
+        const ownValue = row.kind === "item" ? entryMap.get(entryKey(row.id, month.key))?.value ?? 0 : 0;
 
         return (
           <td
@@ -402,10 +402,10 @@ function DataRow({
               row.kind === "category" && "bg-muted/40 font-semibold",
             )}
           >
-            {row.kind === "account" ? (
+            {row.kind === "item" ? (
               <div>
-                <AccountCell
-                  accountId={row.id}
+                <ItemCell
+                  itemId={row.id}
                   month={month.key}
                   type={row.type}
                   value={value}
@@ -441,6 +441,7 @@ function RowLabel({ row }: { row: CashflowRow }) {
       className={cn(
         "sticky left-0 z-[5] h-11 w-[320px] min-w-[320px] border-b border-r border-border bg-background px-4 text-left transition-colors duration-150 group-hover:bg-muted/40",
         row.kind === "category" && "bg-muted/70 font-bold",
+        row.kind === "item" && "font-normal",
       )}
     >
       <div className={cn("flex items-center gap-2", row.depth === 1 && "pl-5")}>
@@ -471,7 +472,7 @@ function CashflowDrawer({
   selectedMonths,
   onClose,
   onCategoryCreated,
-  onAccountCreated,
+  onItemCreated,
   onError,
 }: {
   mode: DrawerMode;
@@ -481,7 +482,7 @@ function CashflowDrawer({
   selectedMonths: string[];
   onClose: () => void;
   onCategoryCreated: (category: Category, message: string) => void;
-  onAccountCreated: (account: Account, message: string) => void;
+  onItemCreated: (item: Item, message: string) => void;
   onError: (message: string) => void;
 }) {
   if (!mode) {
@@ -503,7 +504,7 @@ function CashflowDrawer({
             <div>
               <p className="text-xs text-muted-foreground">Fluxo de caixa</p>
               <h2 className="text-lg font-semibold">
-                {mode === "category" ? "Nova categoria" : mode === "account" ? "Novo lançamento" : "Periodos visiveis"}
+                {mode === "category" ? "Nova categoria" : mode === "item" ? "Novo item" : "Periodos visiveis"}
               </h2>
             </div>
             <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Fechar">
@@ -513,8 +514,8 @@ function CashflowDrawer({
           <div className="min-h-0 flex-1 overflow-auto p-4">
             {mode === "category" ? (
               <QuickCategoryForm onCreated={onCategoryCreated} onError={onError} />
-            ) : mode === "account" ? (
-              <QuickAccountForm categories={categories} onCreated={onAccountCreated} onError={onError} />
+            ) : mode === "item" ? (
+              <QuickItemForm categories={categories} onCreated={onItemCreated} onError={onError} />
             ) : (
               <MonthSelector
                 rangeStart={rangeStart}
@@ -577,7 +578,7 @@ function QuickCategoryForm({
         </select>
       </Field>
       <p className="text-xs text-muted-foreground">
-        O código é gerado automaticamente conforme a ordem de criação dentro do grupo escolhido.
+        O codigo e gerado automaticamente dentro da categoria escolhida.
       </p>
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Criando..." : "Criar categoria"}
@@ -586,21 +587,24 @@ function QuickCategoryForm({
   );
 }
 
-function QuickAccountForm({
+function QuickItemForm({
   categories,
   onCreated,
   onError,
 }: {
   categories: Category[];
-  onCreated: (account: Account, message: string) => void;
+  onCreated: (item: Item, message: string) => void;
   onError: (message: string) => void;
 }) {
   const [pending, setPending] = useState(false);
-  const form = useForm<AccountFormValues>({ defaultValues: { name: "", category_id: "" } });
+  const form = useForm<ItemFormValues>({ defaultValues: { name: "", category_id: "", type: "saida" } });
+  const selectedType = useWatch({ control: form.control, name: "type" }) ?? "saida";
+  const typeField = form.register("type");
+  const filteredCategories = categories.filter((category) => category.type === selectedType);
 
-  async function onSubmit(values: AccountFormValues) {
+  async function onSubmit(values: ItemFormValues) {
     const payload = { ...values, parent_id: null };
-    const parsed = accountSchema.safeParse(payload);
+    const parsed = itemSchema.safeParse(payload);
     const issue = zodResolverIssue(parsed);
 
     if (issue) {
@@ -609,7 +613,7 @@ function QuickAccountForm({
     }
 
     setPending(true);
-    const result = await createAccountAction(payload);
+    const result = await createItemAction(payload);
     setPending(false);
 
     if (!result.ok) {
@@ -617,23 +621,37 @@ function QuickAccountForm({
       return;
     }
 
-    onCreated(result.data, result.message ?? "Lancamento criado.");
-    form.reset({ name: "", category_id: "" });
+    onCreated(result.data, result.message ?? "Item criado.");
+    form.reset({ name: "", category_id: "", type: "saida" });
   }
 
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-      <Field label="Nome" id="quick-account-name">
-        <Input id="quick-account-name" placeholder="Salario" {...form.register("name")} />
+      <Field label="Nome" id="quick-item-name">
+        <Input id="quick-item-name" placeholder="Salario" {...form.register("name")} />
       </Field>
-      <Field label="Categoria" id="quick-account-category">
+      <Field label="Tipo" id="quick-item-type">
         <select
-          id="quick-account-category"
+          id="quick-item-type"
+          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+          {...typeField}
+          onChange={(event) => {
+            typeField.onChange(event);
+            form.setValue("category_id", "");
+          }}
+        >
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saida</option>
+        </select>
+      </Field>
+      <Field label="Categoria" id="quick-item-category">
+        <select
+          id="quick-item-category"
           className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
           {...form.register("category_id")}
         >
-          <option value="">Selecione</option>
-          {categories.map((category) => (
+          <option value="">Sem categoria</option>
+          {filteredCategories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name} ({category.type === "entrada" ? "Entrada" : "Saída"})
             </option>
@@ -641,10 +659,10 @@ function QuickAccountForm({
         </select>
       </Field>
       <p className="text-xs text-muted-foreground">
-        O código é gerado automaticamente dentro da categoria escolhida.
+        O codigo e gerado automaticamente dentro da categoria escolhida.
       </p>
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Criando..." : "Criar lançamento"}
+        {pending ? "Criando..." : "Criar item"}
       </Button>
     </form>
   );
@@ -750,6 +768,6 @@ function calculateTypeTotal(rows: CashflowRow[], entries: Entry[], month: string
   const map = makeEntryMap(entries);
 
   return rows
-    .filter((row) => row.kind === "account" && (kind === "income" ? isIncome(row.type) : !isIncome(row.type)))
+    .filter((row) => row.kind === "item" && (kind === "income" ? isIncome(row.type) : !isIncome(row.type)))
     .reduce((sum, row) => sum + (map.get(entryKey(row.id, month))?.value ?? 0), 0);
 }
