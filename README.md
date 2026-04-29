@@ -34,6 +34,6 @@ No `seed.sql`, substitua `00000000-0000-0000-0000-000000000000` pelo `id` real d
 - `/login`: login
 - `/signup`: cadastro
 - `/app/cashflow`: fluxo de caixa principal
-- `/app/setup`: CRUD de categorias e contas
+- `/app/setup`: CRUD de categorias e itens
 
 > O projeto esta em `next@16.2.4`; nesta versao a antiga convencao de Middleware foi renomeada para `proxy.ts`, usada aqui para proteger `/app/*`.

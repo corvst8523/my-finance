@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 type CategoryUsage = {
   category: Category;
-  accountCount: number;
+  itemCount: number;
   entryCount: number;
 };
 
@@ -95,7 +95,7 @@ export function CategoriesManager({ usage }: CategoriesManagerProps) {
         <header>
           <h1 className="text-2xl font-semibold">Categorias</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Edite o nome ou remova categorias. A exclusão fica bloqueada quando há lançamentos vinculados.
+            Edite o nome ou remova categorias. A exclusao fica bloqueada quando ha lancamentos mensais vinculados.
           </p>
         </header>
 
@@ -119,7 +119,7 @@ export function CategoriesManager({ usage }: CategoriesManagerProps) {
         />
 
         <CategorySection
-          title="Saídas"
+          title="SaÃƒÂ­das"
           tone="expense"
           items={expenseCategories}
           editingId={editingId}
@@ -200,12 +200,12 @@ function CategorySection({
         <p className="p-4 text-sm text-muted-foreground">Nenhuma categoria.</p>
       ) : (
         <ul className="divide-y divide-border">
-          {items.map(({ category, accountCount, entryCount }) => {
+          {items.map(({ category, itemCount, entryCount }) => {
             const editing = editingId === category.id;
             const askingDelete = confirmDeleteId === category.id;
             const blockedReason =
               entryCount > 0
-                ? `Possui ${entryCount} lançamento${entryCount === 1 ? "" : "s"} vinculado${entryCount === 1 ? "" : "s"}.`
+                ? `Possui ${entryCount} lancamento${entryCount === 1 ? "" : "s"} vinculado${entryCount === 1 ? "" : "s"}.`
                 : null;
             const pending = pendingId === category.id;
 
@@ -236,7 +236,7 @@ function CategorySection({
                           className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
                         >
                           <option value="entrada">Entrada</option>
-                          <option value="saida">Saída</option>
+                          <option value="saida">SaÃƒÂ­da</option>
                         </select>
                       </div>
                     </div>
@@ -244,8 +244,8 @@ function CategorySection({
                     <div>
                       <p className="truncate text-sm font-medium">{category.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {accountCount} lançamento{accountCount === 1 ? "" : "s"} · {entryCount} valor
-                        {entryCount === 1 ? "" : "es"} mensal{entryCount === 1 ? "" : "ais"}
+                        {itemCount} item{itemCount === 1 ? "" : "s"} - {entryCount} lancamento
+                        {entryCount === 1 ? "" : "s"} mensal{entryCount === 1 ? "" : "s"}
                       </p>
                     </div>
                   )}
@@ -284,7 +284,7 @@ function CategorySection({
                         variant="destructive"
                         disabled={pending}
                         onClick={() => onConfirmDelete(category)}
-                        aria-label="Confirmar exclusão"
+                        aria-label="Confirmar exclusÃƒÂ£o"
                       >
                         <Check className="size-4" />
                       </Button>

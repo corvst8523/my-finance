@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { CashflowTable } from "@/components/cashflow/CashflowTable";
 import { buildMonthRange, currentYearMonthRange, monthInputFromKey } from "@/lib/cashflow";
 import { createClient } from "@/lib/supabase/server";
-import type { Account, Category, Entry } from "@/lib/types";
+import type { Item, Category, Entry } from "@/lib/types";
 
 type CashflowPageProps = {
   searchParams: Promise<{
@@ -33,14 +33,17 @@ export default async function CashflowPage({ searchParams }: CashflowPageProps) 
     redirect("/login");
   }
 
-  const [categoriesResult, accountsResult, entriesResult] = await Promise.all([
+  const [categoriesResult, accountsResultWithType, entriesResult] = await Promise.all([
     supabase.from("categories").select("id,user_id,code,name,type").eq("user_id", user.id).order("code"),
-    supabase.from("accounts").select("id,user_id,category_id,parent_id,code,name").eq("user_id", user.id).order("code"),
+    supabase.from("items").select("id,user_id,category_id,parent_id,code,name,type").eq("user_id", user.id).order("code"),
     supabase
       .from("entries")
-      .select("id,user_id,account_id,month,value,note")
+      .select("id,user_id,item_id,month,value,note")
       .eq("user_id", user.id),
   ]);
+  const accountsResult = isMissingAccountsType(accountsResultWithType.error)
+    ? await supabase.from("items").select("id,user_id,category_id,parent_id,code,name").eq("user_id", user.id).order("code")
+    : accountsResultWithType;
 
   if (categoriesResult.error || accountsResult.error || entriesResult.error) {
     throw new Error(
@@ -57,7 +60,7 @@ export default async function CashflowPage({ searchParams }: CashflowPageProps) 
   return (
     <CashflowTable
       categories={(categoriesResult.data ?? []) as Category[]}
-      accounts={(accountsResult.data ?? []) as Account[]}
+      items={(accountsResult.data ?? []) as Item[]}
       entries={entries}
       months={visibleMonths}
       rangeMonths={rangeMonths}
@@ -86,4 +89,9 @@ function parseSelectedMonths(value: string | undefined) {
     .split(",")
     .map((item) => item.trim())
     .filter((item) => sanitizeMonthInput(item));
+}
+
+function isMissingAccountsType(error: { message?: string } | null) {
+  const message = error?.message ?? "";
+  return message.includes("items.type") || (message.includes("items") && message.includes("type"));
 }
