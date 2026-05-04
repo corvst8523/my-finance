@@ -1,0 +1,8 @@
+.claude
+.next
+build
+coverage
+node_modules
+out
+package-lock.json
+tsconfig.tsbuildinfo

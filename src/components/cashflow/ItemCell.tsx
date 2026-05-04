@@ -16,7 +16,15 @@ type ItemCellProps = {
   onError: (message: string) => void;
 };
 
-export function ItemCell({ itemId, month, type, value, ownValue, onSaved, onError }: ItemCellProps) {
+export function ItemCell({
+  itemId,
+  month,
+  type,
+  value,
+  ownValue,
+  onSaved,
+  onError,
+}: ItemCellProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(ownValue));
   const [pending, setPending] = useState(false);
@@ -36,7 +44,7 @@ export function ItemCell({ itemId, month, type, value, ownValue, onSaved, onErro
     if (!Number.isFinite(parsed)) {
       setDraft(String(ownValue));
       setEditing(false);
-        onError("Informe um valor numerico.");
+      onError("Informe um valor numerico.");
       return;
     }
 
@@ -76,7 +84,7 @@ export function ItemCell({ itemId, month, type, value, ownValue, onSaved, onErro
         ref={inputRef}
         type="number"
         step="0.01"
-        className="h-8 w-full rounded-md border border-ring bg-background px-2 text-center text-sm outline-none ring-3 ring-ring/20"
+        className="border-ring bg-background ring-ring/20 h-full min-h-11 w-full min-w-0 rounded-none border px-1 text-center text-sm ring-3 outline-none"
         value={draft}
         disabled={pending}
         onChange={(event) => setDraft(event.target.value)}
@@ -91,7 +99,7 @@ export function ItemCell({ itemId, month, type, value, ownValue, onSaved, onErro
     <button
       type="button"
       className={cn(
-        "h-8 w-full rounded-md px-2 text-center text-sm tabular-nums transition-colors duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+        "focus-visible:ring-ring/40 h-full min-h-11 w-full min-w-0 cursor-pointer rounded-none px-1 text-center text-sm whitespace-nowrap tabular-nums transition-colors duration-150 focus-visible:ring-3 focus-visible:outline-none",
         value === 0 && "text-muted-foreground/45",
         value !== 0 && tone === "income" && "text-emerald-700 dark:text-emerald-300",
         value !== 0 && tone === "expense" && "text-rose-700 dark:text-rose-300",

@@ -27,15 +27,17 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
   const sidebar = (
     <aside
       className={cn(
-        "flex h-full flex-col border-r border-border bg-sidebar text-sidebar-foreground transition-all duration-300",
+        "border-border bg-sidebar text-sidebar-foreground flex h-full flex-col border-r transition-all duration-300",
         collapsed ? "w-[76px]" : "w-64",
       )}
     >
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+      <div className="border-sidebar-border flex h-16 items-center gap-3 border-b px-4">
+        <div className="bg-primary text-primary-foreground flex size-10 shrink-0 items-center justify-center rounded-md">
           <WalletCards className="size-5" />
         </div>
-        {!collapsed ? <span className="text-lg font-semibold tracking-tight">My Finance</span> : null}
+        {!collapsed ? (
+          <span className="text-lg font-semibold tracking-tight">My Finance</span>
+        ) : null}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-3">
@@ -49,7 +51,7 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
               href={item.href}
               onClick={() => setDrawerOpen(false)}
               className={cn(
-                "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition hover:scale-[1.01] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+                "hover:bg-sidebar-accent focus-visible:ring-ring/40 flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition hover:scale-[1.01] focus-visible:ring-3 focus-visible:outline-none",
                 active && "bg-sidebar-accent text-sidebar-accent-foreground",
                 collapsed && "justify-center px-0",
               )}
@@ -61,7 +63,7 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
         })}
       </nav>
 
-      <div className="space-y-2 border-t border-sidebar-border p-3">
+      <div className="border-sidebar-border space-y-2 border-t p-3">
         <Button
           type="button"
           variant="ghost"
@@ -78,7 +80,10 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
             type="submit"
             variant="ghost"
             size={collapsed ? "icon" : "sm"}
-            className={cn("w-full text-destructive hover:text-destructive", !collapsed && "justify-start")}
+            className={cn(
+              "text-destructive hover:text-destructive w-full",
+              !collapsed && "justify-start",
+            )}
             title="Sair"
           >
             <LogOut className="size-4" />
@@ -90,7 +95,7 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
   );
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="bg-background flex min-h-dvh">
       <div className="hidden md:block">{sidebar}</div>
 
       {drawerOpen ? (
@@ -98,7 +103,7 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
           <button
             type="button"
             aria-label="Fechar menu"
-            className="absolute inset-0 bg-foreground/30"
+            className="bg-foreground/30 absolute inset-0"
             onClick={() => setDrawerOpen(false)}
           />
           <div className="relative h-full w-72">{sidebar}</div>
@@ -106,7 +111,7 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur md:px-6">
+        <header className="border-border bg-background/95 flex h-16 items-center justify-between border-b px-4 backdrop-blur md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Button
               type="button"
@@ -119,14 +124,14 @@ export function AppShell({ children, userName, currentMonth }: AppShellProps) {
               {drawerOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </Button>
             <div>
-              <p className="text-xs text-muted-foreground">{currentMonth}</p>
+              <p className="text-muted-foreground text-xs">{currentMonth}</p>
               <h1 className="truncate text-base font-semibold">My Finance</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium">{userName}</p>
-              <p className="text-xs text-muted-foreground">Sessao ativa</p>
+              <p className="text-muted-foreground text-xs">Sessao ativa</p>
             </div>
             <form action={logoutAction}>
               <Button type="submit" variant="outline" size="icon-sm" aria-label="Sair">

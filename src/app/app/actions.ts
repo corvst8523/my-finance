@@ -34,7 +34,11 @@ export async function upsertEntryValue(
 
     if (value === 0) {
       if (existing) {
-        const { error } = await supabase.from("entries").delete().eq("id", existing.id).eq("user_id", userId);
+        const { error } = await supabase
+          .from("entries")
+          .delete()
+          .eq("id", existing.id)
+          .eq("user_id", userId);
 
         if (error) {
           return { ok: false, error: error.message };
@@ -47,7 +51,12 @@ export async function upsertEntryValue(
 
     const payload = { user_id: userId, item_id: itemId, month, value };
     const result = existing
-      ? await supabase.from("entries").update(payload).eq("id", existing.id).select(entrySelect).single()
+      ? await supabase
+          .from("entries")
+          .update(payload)
+          .eq("id", existing.id)
+          .select(entrySelect)
+          .single()
       : await supabase.from("entries").insert(payload).select(entrySelect).single();
 
     if (result.error || !result.data) {
@@ -86,7 +95,12 @@ export async function updateEntryNote(
     }
 
     const result = existing
-      ? await supabase.from("entries").update({ note: normalizedNote }).eq("id", existing.id).select(entrySelect).single()
+      ? await supabase
+          .from("entries")
+          .update({ note: normalizedNote })
+          .eq("id", existing.id)
+          .select(entrySelect)
+          .single()
       : await supabase
           .from("entries")
           .insert({ user_id: userId, item_id: itemId, month, value: 0, note: normalizedNote })
@@ -203,7 +217,11 @@ export async function deleteCategoryAction(id: string): Promise<MutationResult<s
         return { ok: false, error: deleteEntriesError.message };
       }
 
-      const { error: deleteItemsError } = await supabase.from(itemTable).delete().eq("user_id", userId).in("id", ids);
+      const { error: deleteItemsError } = await supabase
+        .from(itemTable)
+        .delete()
+        .eq("user_id", userId)
+        .in("id", ids);
 
       if (deleteItemsError) {
         return { ok: false, error: deleteItemsError.message };
@@ -239,7 +257,9 @@ export async function createItemAction(input: unknown): Promise<MutationResult<I
   try {
     const parsed = itemSchema.parse(input);
     const { supabase, userId } = await requireUser();
-    const category = parsed.category_id ? await getOwnedCategory(supabase, userId, parsed.category_id) : null;
+    const category = parsed.category_id
+      ? await getOwnedCategory(supabase, userId, parsed.category_id)
+      : null;
 
     if (parsed.category_id && !category) {
       return { ok: false, error: "Categoria nao encontrada." };
@@ -258,7 +278,11 @@ export async function createItemAction(input: unknown): Promise<MutationResult<I
       type: parsed.type,
       parent_id: null,
     };
-    const { data, error } = await supabase.from(itemTable).insert(payload).select(itemSelectWithType).single();
+    const { data, error } = await supabase
+      .from(itemTable)
+      .insert(payload)
+      .select(itemSelectWithType)
+      .single();
 
     if (error || !data) {
       return { ok: false, error: error?.message ?? "Nao foi possivel criar o item." };
@@ -281,7 +305,9 @@ export async function updateItemAction(input: unknown): Promise<MutationResult<I
       return { ok: false, error: "Item nao encontrado." };
     }
 
-    const category = parsed.category_id ? await getOwnedCategory(supabase, userId, parsed.category_id) : null;
+    const category = parsed.category_id
+      ? await getOwnedCategory(supabase, userId, parsed.category_id)
+      : null;
 
     if (parsed.category_id && !category) {
       return { ok: false, error: "Categoria nao encontrada." };
@@ -292,7 +318,9 @@ export async function updateItemAction(input: unknown): Promise<MutationResult<I
     }
 
     const placementChanged = (existing.category_id ?? null) !== parsed.category_id;
-    const code = placementChanged ? await nextItemCode(supabase, userId, parsed.category_id) : existing.code;
+    const code = placementChanged
+      ? await nextItemCode(supabase, userId, parsed.category_id)
+      : existing.code;
     const payload = {
       code,
       name: parsed.name,
@@ -322,7 +350,11 @@ export async function updateItemAction(input: unknown): Promise<MutationResult<I
 export async function deleteItemAction(id: string): Promise<MutationResult<string>> {
   try {
     const { supabase, userId } = await requireUser();
-    const { error: entriesError } = await supabase.from("entries").delete().eq("item_id", id).eq("user_id", userId);
+    const { error: entriesError } = await supabase
+      .from("entries")
+      .delete()
+      .eq("item_id", id)
+      .eq("user_id", userId);
 
     if (entriesError) {
       return { ok: false, error: entriesError.message };
@@ -364,18 +396,24 @@ async function nextItemCode(
     .eq("user_id", userId)
     .eq("category_id", categoryId);
 
-  const next = getNextCodePart((items ?? []).map((item) => item.code), parentCode);
+  const next = getNextCodePart(
+    (items ?? []).map((item) => item.code),
+    parentCode,
+  );
   return parentCode ? `${parentCode}.${next}` : String(next);
 }
 
-async function nextTopLevelCode(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+async function nextTopLevelCode(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
   const [categoriesResult, itemsResult] = await Promise.all([
     supabase.from("categories").select("code").eq("user_id", userId),
     supabase.from(itemTable).select("code").eq("user_id", userId).is("category_id", null),
   ]);
   const codes = [
-    ...((categoriesResult.data ?? []).map((category) => category.code)),
-    ...((itemsResult.data ?? []).map((item) => item.code)),
+    ...(categoriesResult.data ?? []).map((category) => category.code),
+    ...(itemsResult.data ?? []).map((item) => item.code),
   ];
 
   return String(getNextCodePart(codes));

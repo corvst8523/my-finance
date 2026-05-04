@@ -34,20 +34,32 @@ export default async function CashflowPage({ searchParams }: CashflowPageProps) 
   }
 
   const [categoriesResult, accountsResultWithType, entriesResult] = await Promise.all([
-    supabase.from("categories").select("id,user_id,code,name,type").eq("user_id", user.id).order("code"),
-    supabase.from("items").select("id,user_id,category_id,parent_id,code,name,type").eq("user_id", user.id).order("code"),
     supabase
-      .from("entries")
-      .select("id,user_id,item_id,month,value,note")
-      .eq("user_id", user.id),
+      .from("categories")
+      .select("id,user_id,code,name,type")
+      .eq("user_id", user.id)
+      .order("code"),
+    supabase
+      .from("items")
+      .select("id,user_id,category_id,parent_id,code,name,type")
+      .eq("user_id", user.id)
+      .order("code"),
+    supabase.from("entries").select("id,user_id,item_id,month,value,note").eq("user_id", user.id),
   ]);
   const accountsResult = isMissingAccountsType(accountsResultWithType.error)
-    ? await supabase.from("items").select("id,user_id,category_id,parent_id,code,name").eq("user_id", user.id).order("code")
+    ? await supabase
+        .from("items")
+        .select("id,user_id,category_id,parent_id,code,name")
+        .eq("user_id", user.id)
+        .order("code")
     : accountsResultWithType;
 
   if (categoriesResult.error || accountsResult.error || entriesResult.error) {
     throw new Error(
-      categoriesResult.error?.message ?? accountsResult.error?.message ?? entriesResult.error?.message ?? "Erro ao buscar dados.",
+      categoriesResult.error?.message ??
+        accountsResult.error?.message ??
+        entriesResult.error?.message ??
+        "Erro ao buscar dados.",
     );
   }
 
