@@ -455,7 +455,7 @@ function DisclosureCellButton({
       onClick={onToggle}
       aria-expanded={open}
       className={cn(
-        "hover:bg-muted/30 focus-visible:ring-ring/40 flex h-full min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-4 text-left transition-colors focus-visible:ring-3 focus-visible:outline-none",
+        "hover:bg-muted focus-visible:ring-ring/40 flex h-full min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-4 text-left transition-colors focus-visible:ring-3 focus-visible:outline-none",
         className,
       )}
     >
@@ -520,7 +520,8 @@ function DataRow({
             key={`${row.id}-${month.key}`}
             className={cn(
               "border-border h-11 overflow-hidden border-r border-b text-center whitespace-nowrap transition-colors duration-150",
-              row.kind === "item" && "hover:bg-muted/30 cursor-pointer px-0",
+              row.kind === "item" &&
+                "hover:bg-muted cursor-pointer bg-white px-0 dark:bg-neutral-900",
               row.kind === "category" && "bg-white px-2 font-semibold dark:bg-neutral-900",
             )}
           >
@@ -586,7 +587,7 @@ function RowLabel({
         isCategory
           ? "bg-white p-0 font-semibold dark:bg-neutral-900"
           : cn(
-              "group-hover:bg-muted/40 bg-white dark:bg-neutral-900",
+              "group-hover:bg-muted bg-white dark:bg-neutral-900",
               itemIndentClass,
               itemWeightClass,
             ),
