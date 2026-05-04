@@ -14,7 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buildRows } from "@/lib/cashflow";
 import type { Item, Category } from "@/lib/types";
-import { type ItemFormValues, itemSchema, type CategoryFormValues, categorySchema } from "@/lib/validation";
+import {
+  type ItemFormValues,
+  itemSchema,
+  type CategoryFormValues,
+  categorySchema,
+} from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { Edit3, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -57,7 +62,9 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
   }
 
   async function submitCategory(values: CategoryFormValues) {
-    const parsed = categorySchema.safeParse(editingCategory ? { ...values, id: editingCategory.id } : values);
+    const parsed = categorySchema.safeParse(
+      editingCategory ? { ...values, id: editingCategory.id } : values,
+    );
     const issue = zodResolverIssue(parsed);
 
     if (issue) {
@@ -124,25 +131,29 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
   }
 
   return (
-    <div className="h-[calc(100dvh-4rem)] overflow-auto bg-muted/25 p-4 md:p-6">
+    <div className="bg-muted/25 h-[calc(100dvh-4rem)] overflow-auto p-4 md:p-6">
       <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[420px_1fr]">
         <section className="space-y-4">
           <FormPanel title={editingCategory ? "Editar categoria" : "Nova categoria"}>
             <form className="space-y-4" onSubmit={categoryForm.handleSubmit(submitCategory)}>
               <Field label="Nome" id="category-name">
-                <Input id="category-name" {...categoryForm.register("name")} placeholder="Vendas de Animais" />
+                <Input
+                  id="category-name"
+                  {...categoryForm.register("name")}
+                  placeholder="Vendas de Animais"
+                />
               </Field>
               <Field label="Tipo" id="category-type">
                 <select
                   id="category-type"
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                  className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-3"
                   {...categoryForm.register("type")}
                 >
                   <option value="entrada">Entrada</option>
                   <option value="saida">Saida</option>
                 </select>
               </Field>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Código gerado automaticamente conforme a ordem dentro do grupo.
               </p>
               <div className="flex gap-2">
@@ -175,7 +186,7 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
               <Field label="Tipo" id="item-type">
                 <select
                   id="item-type"
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                  className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-3"
                   {...itemTypeField}
                   onChange={(event) => {
                     itemTypeField.onChange(event);
@@ -189,7 +200,7 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
               <Field label="Categoria" id="item-category">
                 <select
                   id="item-category"
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                  className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-3"
                   {...itemForm.register("category_id")}
                 >
                   <option value="">Sem categoria</option>
@@ -200,7 +211,7 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
                   ))}
                 </select>
               </Field>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Código gerado automaticamente dentro da categoria escolhida.
               </p>
               <div className="flex gap-2">
@@ -225,23 +236,31 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
             </form>
           </FormPanel>
 
-          {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p> : null}
-          {error ? <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{error}</p> : null}
+          {message ? (
+            <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+              {message}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+              {error}
+            </p>
+          ) : null}
         </section>
 
-        <section className="rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3">
+        <section className="border-border bg-card rounded-lg border">
+          <div className="border-border border-b px-4 py-3">
             <h2 className="text-lg font-semibold">Categorias e itens</h2>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-border divide-y">
             {rows.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">Nenhuma categoria criada ainda.</p>
+              <p className="text-muted-foreground p-4 text-sm">Nenhuma categoria criada ainda.</p>
             ) : (
               rows.map((row) => (
                 <div
                   key={`${row.kind}-${row.id}`}
                   className={cn(
-                    "flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-muted/50",
+                    "hover:bg-muted/50 flex items-center justify-between gap-3 px-4 py-3 transition",
                     row.kind === "category" && "bg-muted/40 font-semibold",
                   )}
                 >
@@ -249,8 +268,12 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
                     <p className="truncate text-sm">
                       <span className="text-muted-foreground">{row.code}</span> {row.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {row.kind === "category" ? (row.type === "entrada" ? "Entrada" : "Saida") : "Item"}
+                    <p className="text-muted-foreground text-xs">
+                      {row.kind === "category"
+                        ? row.type === "entrada"
+                          ? "Entrada"
+                          : "Saida"
+                        : "Item"}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
@@ -277,7 +300,9 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
                       size="icon-sm"
                       className="text-destructive hover:text-destructive"
                       aria-label="Deletar"
-                      onClick={() => (row.kind === "category" ? removeCategory(row.id) : removeItem(row.id))}
+                      onClick={() =>
+                        row.kind === "category" ? removeCategory(row.id) : removeItem(row.id)
+                      }
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -294,7 +319,7 @@ export function SetupManager({ categories, items }: SetupManagerProps) {
 
 function FormPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4">
+    <section className="border-border bg-card rounded-lg border p-4">
       <h2 className="mb-4 text-lg font-semibold">{title}</h2>
       {children}
     </section>
@@ -309,4 +334,3 @@ function Field({ label, id, children }: { label: string; id: string; children: R
     </div>
   );
 }
-

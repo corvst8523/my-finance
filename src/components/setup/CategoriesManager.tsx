@@ -90,12 +90,13 @@ export function CategoriesManager({ usage }: CategoriesManagerProps) {
   }
 
   return (
-    <div className="relative h-[calc(100dvh-4rem)] overflow-auto bg-background">
+    <div className="bg-background relative h-[calc(100dvh-4rem)] overflow-auto">
       <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-6">
         <header>
           <h1 className="text-2xl font-semibold">Categorias</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Edite o nome ou remova categorias. A exclusao fica bloqueada quando ha lancamentos mensais vinculados.
+          <p className="text-muted-foreground mt-1 text-sm">
+            Edite o nome ou remova categorias. A exclusao fica bloqueada quando ha lancamentos
+            mensais vinculados.
           </p>
         </header>
 
@@ -119,7 +120,7 @@ export function CategoriesManager({ usage }: CategoriesManagerProps) {
         />
 
         <CategorySection
-          title="SaÃƒÂ­das"
+          title="Saídas"
           tone="expense"
           items={expenseCategories}
           editingId={editingId}
@@ -141,7 +142,7 @@ export function CategoriesManager({ usage }: CategoriesManagerProps) {
       {toast ? (
         <div
           className={cn(
-            "fixed bottom-5 right-5 z-30 rounded-md border px-4 py-3 text-sm shadow-lg",
+            "fixed right-5 bottom-5 z-30 rounded-md border px-4 py-3 text-sm shadow-lg",
             toast.tone === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
               : "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100",
@@ -189,23 +190,26 @@ function CategorySection({
   onCancelDelete: () => void;
   onConfirmDelete: (category: Category) => Promise<void>;
 }) {
-  const toneClass = tone === "income" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400";
+  const toneClass =
+    tone === "income"
+      ? "text-emerald-700 dark:text-emerald-400"
+      : "text-rose-700 dark:text-rose-400";
 
   return (
-    <section className="rounded-lg border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className={cn("text-lg font-semibold uppercase tracking-wide", toneClass)}>{title}</h2>
+    <section className="border-border bg-card rounded-lg border">
+      <div className="border-border border-b px-4 py-3">
+        <h2 className={cn("text-lg font-semibold tracking-wide uppercase", toneClass)}>{title}</h2>
       </div>
       {items.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">Nenhuma categoria.</p>
+        <p className="text-muted-foreground p-4 text-sm">Nenhuma categoria.</p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-border divide-y">
           {items.map(({ category, itemCount, entryCount }) => {
             const editing = editingId === category.id;
             const askingDelete = confirmDeleteId === category.id;
             const blockedReason =
               entryCount > 0
-                ? `Possui ${entryCount} lancamento${entryCount === 1 ? "" : "s"} vinculado${entryCount === 1 ? "" : "s"}.`
+                ? `Remova ${entryCount} ${entryCount === 1 ? "lançamento vinculado" : "lançamentos vinculados"} antes de excluir.`
                 : null;
             const pending = pendingId === category.id;
 
@@ -232,8 +236,10 @@ function CategorySection({
                         <select
                           id={`type-${category.id}`}
                           value={draftType}
-                          onChange={(event) => onDraftType(event.target.value as "entrada" | "saida")}
-                          className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                          onChange={(event) =>
+                            onDraftType(event.target.value as "entrada" | "saida")
+                          }
+                          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-3"
                         >
                           <option value="entrada">Entrada</option>
                           <option value="saida">SaÃƒÂ­da</option>
@@ -243,10 +249,15 @@ function CategorySection({
                   ) : (
                     <div>
                       <p className="truncate text-sm font-medium">{category.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {itemCount} item{itemCount === 1 ? "" : "s"} - {entryCount} lancamento
-                        {entryCount === 1 ? "" : "s"} mensal{entryCount === 1 ? "" : "s"}
-                      </p>
+                      <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
+                        <p>
+                          {itemCount} {itemCount === 1 ? "item vinculado" : "itens vinculados"}
+                        </p>
+                        <p>
+                          {entryCount}{" "}
+                          {entryCount === 1 ? "lançamento vinculado" : "lançamentos vinculados"}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -277,7 +288,7 @@ function CategorySection({
                     </>
                   ) : askingDelete ? (
                     <>
-                      <span className="text-xs text-muted-foreground">Confirmar?</span>
+                      <span className="text-muted-foreground text-xs">Confirmar?</span>
                       <Button
                         type="button"
                         size="icon-sm"
@@ -325,10 +336,6 @@ function CategorySection({
                     </>
                   )}
                 </div>
-
-                {blockedReason && !editing && !askingDelete ? (
-                  <p className="basis-full text-xs text-muted-foreground">{blockedReason}</p>
-                ) : null}
               </li>
             );
           })}

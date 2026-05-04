@@ -14,7 +14,12 @@ export default async function CategoriesPage() {
   }
 
   const [categoriesResult, accountsResult, entriesResult] = await Promise.all([
-    supabase.from("categories").select("id,user_id,code,name,type").eq("user_id", user.id).order("type").order("code"),
+    supabase
+      .from("categories")
+      .select("id,user_id,code,name,type")
+      .eq("user_id", user.id)
+      .order("type")
+      .order("code"),
     supabase.from("items").select("id,category_id").eq("user_id", user.id),
     supabase.from("entries").select("item_id,value").eq("user_id", user.id).neq("value", 0),
   ]);

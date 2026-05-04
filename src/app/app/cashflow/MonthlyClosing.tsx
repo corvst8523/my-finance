@@ -27,7 +27,14 @@ type MonthlyClosingProps = {
   onError: (message: string) => void;
 };
 
-export function MonthlyClosing({ month, rows, entries, onClose, onEntryChange, onError }: MonthlyClosingProps) {
+export function MonthlyClosing({
+  month,
+  rows,
+  entries,
+  onClose,
+  onEntryChange,
+  onError,
+}: MonthlyClosingProps) {
   const [savingNote, setSavingNote] = useState("");
   const map = useMemo(() => makeEntryMap(entries), [entries]);
 
@@ -63,7 +70,7 @@ export function MonthlyClosing({ month, rows, entries, onClose, onEntryChange, o
       <motion.section
         key={month.key}
         layoutId={`month-${month.key}`}
-        className="absolute inset-0 z-20 overflow-auto bg-background"
+        className="bg-background absolute inset-0 z-20 overflow-auto"
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 18 }}
@@ -72,10 +79,17 @@ export function MonthlyClosing({ month, rows, entries, onClose, onEntryChange, o
         <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-6 p-4 md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Fechamento mensal</p>
-              <h2 className="text-3xl font-semibold capitalize tracking-tight md:text-4xl">{monthTitle(month.key)}</h2>
+              <p className="text-muted-foreground text-sm font-medium">Fechamento mensal</p>
+              <h2 className="text-3xl font-semibold tracking-tight capitalize md:text-4xl">
+                {monthTitle(month.key)}
+              </h2>
             </div>
-            <Button type="button" variant="outline" onClick={onClose} className="hover:scale-[1.01]">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="hover:scale-[1.01]"
+            >
               <ArrowLeft className="size-4" />
               Voltar
             </Button>
@@ -113,14 +127,24 @@ export function MonthlyClosing({ month, rows, entries, onClose, onEntryChange, o
   );
 }
 
-function Summary({ label, value, tone }: { label: string; value: number; tone: "income" | "expense" }) {
+function Summary({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "income" | "expense";
+}) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-sm text-muted-foreground">{label}</p>
+    <div className="border-border bg-card rounded-lg border p-4">
+      <p className="text-muted-foreground text-sm">{label}</p>
       <p
         className={cn(
           "mt-2 text-2xl font-semibold tabular-nums",
-          tone === "income" ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300",
+          tone === "income"
+            ? "text-emerald-700 dark:text-emerald-300"
+            : "text-rose-700 dark:text-rose-300",
         )}
       >
         {formatCurrency(value)}
@@ -149,14 +173,14 @@ function ClosingSection({
   const map = useMemo(() => makeEntryMap(entries), [entries]);
 
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
+    <section className="border-border bg-card min-w-0 rounded-lg border">
+      <div className="border-border border-b px-4 py-3">
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <div className="divide-y divide-border">
+      <div className="divide-border divide-y">
         {rows.map((row) => {
           const value = calculateRowValue(row, allRows, entries, month);
-          const note = row.kind === "item" ? map.get(entryKey(row.id, month))?.note ?? "" : "";
+          const note = row.kind === "item" ? (map.get(entryKey(row.id, month))?.note ?? "") : "";
 
           return (
             <motion.div

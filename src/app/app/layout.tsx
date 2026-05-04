@@ -17,7 +17,7 @@ export default async function PrivateLayout({ children }: { children: React.Reac
   const name =
     typeof user.user_metadata.name === "string" && user.user_metadata.name.trim().length > 0
       ? user.user_metadata.name
-      : user.email ?? "Usuario";
+      : (user.email ?? "Usuario");
 
   return (
     <AppShell userName={name} currentMonth={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}>

@@ -14,15 +14,29 @@ export default async function SetupPage() {
   }
 
   const [categoriesResult, accountsResultWithType] = await Promise.all([
-    supabase.from("categories").select("id,user_id,code,name,type").eq("user_id", user.id).order("code"),
-    supabase.from("items").select("id,user_id,category_id,parent_id,code,name,type").eq("user_id", user.id).order("code"),
+    supabase
+      .from("categories")
+      .select("id,user_id,code,name,type")
+      .eq("user_id", user.id)
+      .order("code"),
+    supabase
+      .from("items")
+      .select("id,user_id,category_id,parent_id,code,name,type")
+      .eq("user_id", user.id)
+      .order("code"),
   ]);
   const accountsResult = isMissingAccountsType(accountsResultWithType.error)
-    ? await supabase.from("items").select("id,user_id,category_id,parent_id,code,name").eq("user_id", user.id).order("code")
+    ? await supabase
+        .from("items")
+        .select("id,user_id,category_id,parent_id,code,name")
+        .eq("user_id", user.id)
+        .order("code")
     : accountsResultWithType;
 
   if (categoriesResult.error || accountsResult.error) {
-    throw new Error(categoriesResult.error?.message ?? accountsResult.error?.message ?? "Erro ao buscar dados.");
+    throw new Error(
+      categoriesResult.error?.message ?? accountsResult.error?.message ?? "Erro ao buscar dados.",
+    );
   }
 
   return (

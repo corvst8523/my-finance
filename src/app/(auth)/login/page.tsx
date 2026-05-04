@@ -45,10 +45,10 @@ function LoginForm() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-muted/40 px-4">
-      <section className="w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm">
+    <main className="bg-muted/40 grid min-h-dvh place-items-center px-4">
+      <section className="border-border bg-background w-full max-w-sm rounded-lg border p-6 shadow-sm">
         <div className="mb-6">
-          <p className="text-sm font-medium text-muted-foreground">My Finance</p>
+          <p className="text-muted-foreground text-sm font-medium">My Finance</p>
           <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
         </div>
 
@@ -59,17 +59,26 @@ function LoginForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" name="password" type="password" autoComplete="current-password" required />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <p className="text-destructive text-sm">{error}</p> : null}
           <Button type="submit" className="w-full hover:scale-[1.01]" disabled={pending}>
             {pending ? "Entrando..." : "Entrar"}
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-5 text-center text-sm">
           Ainda nao tem conta?{" "}
-          <Link href="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
+          <Link
+            href="/signup"
+            className="text-foreground font-medium underline-offset-4 hover:underline"
+          >
             Cadastrar
           </Link>
         </p>

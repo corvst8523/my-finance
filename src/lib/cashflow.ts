@@ -1,4 +1,11 @@
-import { addMonths, differenceInCalendarMonths, format, isSameMonth, parseISO, startOfMonth } from "date-fns";
+import {
+  addMonths,
+  differenceInCalendarMonths,
+  format,
+  isSameMonth,
+  parseISO,
+  startOfMonth,
+} from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
 import type { Item, CashflowRow, Category, Entry, MonthInfo } from "@/lib/types";
 
@@ -148,7 +155,12 @@ export function getOwnValue(entries: Entry[], itemId: string, month: string) {
   return makeEntryMap(entries).get(entryKey(itemId, month))?.value ?? 0;
 }
 
-export function calculateRowValue(row: CashflowRow, rows: CashflowRow[], entries: Entry[], month: string) {
+export function calculateRowValue(
+  row: CashflowRow,
+  rows: CashflowRow[],
+  entries: Entry[],
+  month: string,
+) {
   const map = makeEntryMap(entries);
 
   if (row.kind === "category") {
