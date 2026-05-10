@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { signupAction } from "../actions";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -28,20 +29,22 @@ export default function SignupPage() {
     }
 
     setPending(true);
-    const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
-    setPending(false);
+    const result = await signupAction({ name, email, password });
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (!result.ok) {
+      setPending(false);
+      setError(result.error);
       return;
     }
 
-    if (!data.session) {
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setPending(false);
+
+    if (signInError) {
       router.replace("/login");
       return;
     }
